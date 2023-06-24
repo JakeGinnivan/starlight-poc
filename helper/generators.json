@@ -1,0 +1,14 @@
+{
+  "generators": {
+    "new-decision-log": {
+      "factory": "./src/generators/new-decision-log/generator",
+      "schema": "./src/generators/new-decision-log/schema.json",
+      "description": "new-decision-log generator"
+    },
+    "new-rfc": {
+      "factory": "./src/generators/new-rfc/generator",
+      "schema": "./src/generators/new-rfc/schema.json",
+      "description": "new-rfc generator"
+    }
+  }
+}
