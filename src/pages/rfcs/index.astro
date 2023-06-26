@@ -1,0 +1,28 @@
+---
+import type { InferGetStaticPropsType } from 'astro'
+
+import { getCollection } from 'astro:content'
+
+/**
+ * Astro is inconsistent in its `index.md` slug generation. In most cases,
+ * `index` is stripped, but in the root of a collection, we get a slug of `index`.
+ * We map that to an empty string for consistent behaviour.
+ */
+const normalizeIndexSlug = (slug: string) => (slug === 'index' ? '' : slug)
+
+export async function getStaticPaths() {
+  const rfcs = await getCollection('rfcs')
+
+  return rfcs.map(({ slug, ...entry }) => ({
+    ...entry,
+    slug: normalizeIndexSlug(slug),
+  }))
+}
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>
+// const { Content, headings } = await Astro.props.entry.render()
+---
+
+<h2>RFC&quot;s</h2>
+
+<!-- <Page {...Astro.props} {headings}><Content /></Page> -->

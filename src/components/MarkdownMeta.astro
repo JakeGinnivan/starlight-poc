@@ -1,0 +1,25 @@
+---
+interface Props {
+  entryMeta: Record<string, string>
+
+  /** Which frontmatter properties should be rendered in the page */
+  metaProperties: Array<{ key: string; header?: string }>
+}
+
+const { entryMeta, metaProperties } = Astro.props
+---
+
+<div class="page-properties">
+  <dl>
+    {
+      metaProperties
+        .filter((p) => !!entryMeta[p.key])
+        .map((p) => (
+          <>
+            <dt>{p.header ?? p.key}</dt>
+            <dd>{entryMeta[p.key]}</dd>
+          </>
+        ))
+    }
+  </dl>
+</div>

@@ -2,8 +2,7 @@
   "recommendations": [
     "astro-build.astro-vscode",
     "esbenp.prettier-vscode",
-    "dbaeumer.vscode-eslint",
-    "firsttris.vscode-jest-runner"
+    "dbaeumer.vscode-eslint"
   ],
   "unwantedRecommendations": []
 }

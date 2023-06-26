@@ -1,8 +1,14 @@
 {
   "extends": "astro/tsconfigs/strict",
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "paths": {
-      "helper": ["helper/src/index.ts"]
+      "helper": [
+        "helper/src/index.ts"
+      ],
+      "@astrojs/starlight/*": [
+        "node_modules/@astrojs/starlight/*"
+      ]
     }
   }
 }
