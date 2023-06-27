@@ -1,29 +1,33 @@
-import { basename, dirname } from 'node:path';
-import config from 'virtual:starlight/user-config';
-import { pathWithBase } from './base';
-import { pickLang } from './i18n';
-import { Route, getLocaleRoutes, routes } from './routing';
-import { localeToLang, slugToPathname } from './slugs';
+import { basename, dirname } from 'node:path'
+import config from 'virtual:starlight/user-config'
+import { pathWithBase } from './base'
+import { pickLang } from './i18n'
+import { localeToLang, slugToPathname } from './slugs'
 import type {
   AutoSidebarGroup,
   SidebarItem,
   SidebarLinkItem,
-} from './user-config';
+} from './user-config'
 
 export interface Link {
-  type: 'link';
-  label: string;
-  href: string;
-  isCurrent: boolean;
+  type: 'link'
+  label: string
+  href: string
+  isCurrent: boolean
 }
 
 interface Group {
-  type: 'group';
-  label: string;
-  entries: (Link | Group)[];
+  type: 'group'
+  label: string
+  entries: (Link | Group)[]
 }
 
-export type SidebarEntry = Link | Group;
+export type SidebarEntry = Link | Group
+
+export interface Route {
+  id: string
+  slug: string
+}
 
 /**
  * A representation of the route structure. For each object entry:
@@ -32,7 +36,7 @@ export type SidebarEntry = Link | Group;
  * is the entry’s full slug.
  */
 interface Dir {
-  [item: string]: Dir | string;
+  [item: string]: Dir | string
 }
 
 /** Convert an item in a user’s sidebar config to a sidebar entry. */
@@ -43,9 +47,9 @@ function configItemToEntry(
   routes: Route[]
 ): SidebarEntry {
   if ('link' in item) {
-    return linkFromConfig(item, locale, currentPathname);
+    return linkFromConfig(item, locale, currentPathname)
   } else if ('autogenerate' in item) {
-    return groupFromAutogenerateConfig(item, locale, routes, currentPathname);
+    return groupFromAutogenerateConfig(item, locale, routes, currentPathname)
   } else {
     return {
       type: 'group',
@@ -53,7 +57,7 @@ function configItemToEntry(
       entries: item.items.map((i) =>
         configItemToEntry(i, currentPathname, locale, routes)
       ),
-    };
+    }
   }
 }
 
@@ -64,31 +68,31 @@ function groupFromAutogenerateConfig(
   routes: Route[],
   currentPathname: string
 ): Group {
-  const { directory } = item.autogenerate;
-  const localeDir = locale ? locale + '/' + directory : directory;
+  const { directory } = item.autogenerate
+  const localeDir = locale ? locale + '/' + directory : directory
   const dirDocs = routes.filter(
     (doc) =>
       // Match against `foo.md` or `foo/index.md`.
-      stripExtension(doc.entry.id) === localeDir ||
+      stripExtension(doc.id) === localeDir ||
       // Match against `foo/anything/else.md`.
-      doc.entry.id.startsWith(localeDir + '/')
-  );
-  const tree = treeify(dirDocs, localeDir);
+      doc.id.startsWith(localeDir + '/')
+  )
+  const tree = treeify(dirDocs, localeDir)
   return {
     type: 'group',
     label: pickLang(item.translations, localeToLang(locale)) || item.label,
-    entries: sidebarFromDir(tree, currentPathname, locale),
-  };
+    entries: sidebarFromDir(dirDocs, tree, currentPathname, locale),
+  }
 }
 
 /** Check if a string starts with one of `http://` or `https://`. */
-const isAbsolute = (link: string) => /^https?:\/\//.test(link);
+const isAbsolute = (link: string) => /^https?:\/\//.test(link)
 
 /** Ensure the passed path starts and ends with trailing slashes. */
 function ensureLeadingAndTrailingSlashes(href: string): string {
-  if (href[0] !== '/') href = '/' + href;
-  if (href[href.length - 1] !== '/') href += '/';
-  return href;
+  if (href[0] !== '/') href = '/' + href
+  if (href[href.length - 1] !== '/') href += '/'
+  return href
 }
 
 /** Create a link entry from a user config object. */
@@ -97,73 +101,78 @@ function linkFromConfig(
   locale: string | undefined,
   currentPathname: string
 ) {
-  let href = item.link;
+  let href = item.link
   if (!isAbsolute(href)) {
-    href = ensureLeadingAndTrailingSlashes(href);
+    href = ensureLeadingAndTrailingSlashes(href)
     // Inject current locale into link.
-    if (locale) href = '/' + locale + href;
+    if (locale) href = '/' + locale + href
   }
-  const label = pickLang(item.translations, localeToLang(locale)) || item.label;
-  return makeLink(href, label, currentPathname);
+  const label = pickLang(item.translations, localeToLang(locale)) || item.label
+  return makeLink(href, label, currentPathname)
 }
 
 /** Create a link entry. */
 function makeLink(href: string, label: string, currentPathname: string): Link {
-  if (!isAbsolute(href)) href = pathWithBase(href);
-  const isCurrent = href === currentPathname;
-  return { type: 'link', label, href, isCurrent };
+  if (!isAbsolute(href)) href = pathWithBase(href)
+  const isCurrent = href === currentPathname
+  return { type: 'link', label, href, isCurrent }
 }
 
 /** Get the segments leading to a page. */
 function getBreadcrumbs(path: string, baseDir: string): string[] {
   // Strip extension from path.
-  const pathWithoutExt = stripExtension(path);
+  const pathWithoutExt = stripExtension(path)
   // Index paths will match `baseDir` and don’t include breadcrumbs.
-  if (pathWithoutExt === baseDir) return [];
+  if (pathWithoutExt === baseDir) return []
   // Ensure base directory ends in a trailing slash.
-  if (!baseDir.endsWith('/')) baseDir += '/';
+  if (!baseDir.endsWith('/')) baseDir += '/'
   // Strip base directory from path if present.
   const relativePath = pathWithoutExt.startsWith(baseDir)
     ? pathWithoutExt.replace(baseDir, '')
-    : pathWithoutExt;
-  let dir = dirname(relativePath);
+    : pathWithoutExt
+  let dir = dirname(relativePath)
   // Return no breadcrumbs for items in the root directory.
-  if (dir === '.') return [];
-  return dir.split('/');
+  if (dir === '.') return []
+  return dir.split('/')
 }
 
 /** Turn a flat array of routes into a tree structure. */
 function treeify(routes: Route[], baseDir: string): Dir {
-  const treeRoot: Dir = {};
+  const treeRoot: Dir = {}
   routes.forEach((doc) => {
-    const breadcrumbs = getBreadcrumbs(doc.entry.id, baseDir);
+    const breadcrumbs = getBreadcrumbs(doc.id, baseDir)
 
     // Walk down the route’s path to generate the tree.
-    let currentDir = treeRoot;
+    let currentDir = treeRoot
     breadcrumbs.forEach((dir) => {
       // Create new folder if needed.
-      if (typeof currentDir[dir] === 'undefined') currentDir[dir] = {};
+      if (typeof currentDir[dir] === 'undefined') currentDir[dir] = {}
       // Go into the subdirectory.
-      currentDir = currentDir[dir] as Dir;
-    });
+      currentDir = currentDir[dir] as Dir
+    })
     // We’ve walked through the path. Register the route in this directory.
-    currentDir[basename(doc.slug)] = doc.slug;
-  });
-  return treeRoot;
+    currentDir[basename(doc.slug)] = doc.slug
+  })
+  return treeRoot
 }
 
 /** Create a link entry for a given content collection entry. */
-function linkFromSlug(slug: string, currentPathname: string): Link {
-  const doc = routes.find((doc) => doc.slug === slug)!;
+function linkFromSlug(
+  routes: Route[],
+  slug: string,
+  currentPathname: string
+): Link {
+  const doc = routes.find((doc) => doc.entry.slug === slug)!
   return makeLink(
-    slugToPathname(doc.slug),
+    slugToPathname(doc.entry.slug),
     doc.entry.data.title,
     currentPathname
-  );
+  )
 }
 
 /** Create a group entry for a given content collection directory. */
 function groupFromDir(
+  routes: Route[],
   dir: Dir,
   fullPath: string,
   dirName: string,
@@ -171,17 +180,25 @@ function groupFromDir(
   locale: string | undefined
 ): Group {
   const entries = Object.entries(dir).map(([key, dirOrSlug]) =>
-    dirToItem(dirOrSlug, `${fullPath}/${key}`, key, currentPathname, locale)
-  );
+    dirToItem(
+      routes,
+      dirOrSlug,
+      `${fullPath}/${key}`,
+      key,
+      currentPathname,
+      locale
+    )
+  )
   return {
     type: 'group',
     label: dirName,
     entries,
-  };
+  }
 }
 
 /** Create a sidebar entry for a directory or content slug. */
 function dirToItem(
+  routes: Route[],
   dirOrSlug: Dir[string],
   fullPath: string,
   dirName: string,
@@ -189,34 +206,43 @@ function dirToItem(
   locale: string | undefined
 ): SidebarEntry {
   return typeof dirOrSlug === 'string'
-    ? linkFromSlug(dirOrSlug, currentPathname)
-    : groupFromDir(dirOrSlug, fullPath, dirName, currentPathname, locale);
+    ? linkFromSlug(routes, dirOrSlug, currentPathname)
+    : groupFromDir(
+        routes,
+        dirOrSlug,
+        fullPath,
+        dirName,
+        currentPathname,
+        locale
+      )
 }
 
 /** Create a sidebar entry for a given content directory. */
 function sidebarFromDir(
+  routes: Route[],
   tree: Dir,
   currentPathname: string,
   locale: string | undefined
 ) {
   return Object.entries(tree).map(([key, dirOrSlug]) =>
-    dirToItem(dirOrSlug, key, key, currentPathname, locale)
-  );
+    dirToItem(routes, dirOrSlug, key, key, currentPathname, locale)
+  )
 }
 
 /** Get the sidebar for the current page. */
 export function getSidebar(
+  routes: Route[],
   pathname: string,
   locale: string | undefined
 ): SidebarEntry[] {
-  const routes = getLocaleRoutes(locale);
+  const localeRoutes = getLocaleRoutes(routes, locale)
   if (config.sidebar) {
     return config.sidebar.map((group) =>
-      configItemToEntry(group, pathname, locale, routes)
-    );
+      configItemToEntry(group, pathname, locale, localeRoutes)
+    )
   } else {
-    const tree = treeify(routes, locale || '');
-    return sidebarFromDir(tree, pathname, locale);
+    const tree = treeify(localeRoutes, locale || '')
+    return sidebarFromDir(localeRoutes, tree, pathname, locale)
   }
 }
 
@@ -224,20 +250,20 @@ export function getSidebar(
 function flattenSidebar(sidebar: SidebarEntry[]): Link[] {
   return sidebar.flatMap((entry) =>
     entry.type === 'group' ? flattenSidebar(entry.entries) : entry
-  );
+  )
 }
 
 /** Get previous/next pages in the sidebar if there are any. */
 export function getPrevNextLinks(sidebar: SidebarEntry[]): {
-  prev: Link | undefined;
-  next: Link | undefined;
+  prev: Link | undefined
+  next: Link | undefined
 } {
-  const entries = flattenSidebar(sidebar);
-  const currentIndex = entries.findIndex((entry) => entry.isCurrent);
-  const prev = entries[currentIndex - 1];
-  const next = currentIndex > -1 ? entries[currentIndex + 1] : undefined;
-  return { prev, next };
+  const entries = flattenSidebar(sidebar)
+  const currentIndex = entries.findIndex((entry) => entry.isCurrent)
+  const prev = entries[currentIndex - 1]
+  const next = currentIndex > -1 ? entries[currentIndex + 1] : undefined
+  return { prev, next }
 }
 
 /** Remove the extension from a path. */
-const stripExtension = (path: string) => path.replace(/\.\w+$/, '');
+const stripExtension = (path: string) => path.replace(/\.\w+$/, '')

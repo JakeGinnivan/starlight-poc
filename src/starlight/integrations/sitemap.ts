@@ -1,12 +1,12 @@
-import sitemap, { SitemapOptions } from '@astrojs/sitemap';
-import type { StarlightConfig } from '../types';
+import sitemap, { SitemapOptions } from '@astrojs/sitemap'
+import type { StarlightConfig } from '../utils/user-config'
 
 /**
  * A wrapped version of the `@astrojs/sitemap` integration configured based
  * on Starlight i18n config.
  */
 export function starlightSitemap(opts: StarlightConfig) {
-  const sitemapConfig: SitemapOptions = {};
+  const sitemapConfig: SitemapOptions = {}
   if (opts.isMultilingual) {
     sitemapConfig.i18n = {
       defaultLocale: opts.defaultLocale.locale! || 'root',
@@ -16,7 +16,7 @@ export function starlightSitemap(opts: StarlightConfig) {
           config?.lang!,
         ])
       ),
-    };
+    }
   }
-  return sitemap(sitemapConfig);
+  return sitemap(sitemapConfig)
 }

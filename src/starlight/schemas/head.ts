@@ -1,4 +1,4 @@
-import { z } from 'astro/zod';
+import { z } from 'astro/zod'
 
 export const HeadConfigSchema = () =>
   z
@@ -23,7 +23,6 @@ export const HeadConfigSchema = () =>
         content: z.string().default(''),
       })
     )
-    .default([]);
+    .default([])
 
-export type HeadUserConfig = z.input<ReturnType<typeof HeadConfigSchema>>;
-export type HeadConfig = z.output<ReturnType<typeof HeadConfigSchema>>;
+export type HeadConfig = z.output<ReturnType<typeof HeadConfigSchema>>

@@ -3,21 +3,20 @@ import {
   SidebarEntry,
   getPrevNextLinks,
 } from '@astrojs/starlight/utils/navigation'
-import type { LocaleData } from '@astrojs/starlight/utils/slugs'
 import config from 'virtual:starlight/user-config'
 
-import EditLink from '@astrojs/starlight/components/EditLink.astro'
-import LastUpdated from '@astrojs/starlight/components/LastUpdated.astro'
-import PrevNextLinks from '@astrojs/starlight/components/PrevNextLinks.astro'
-import type { StarlightData } from '../starlight/schemas/starlight'
+import type { LocaleData } from '../starlight/utils/slugs'
+import EditLink from './EditLink.astro'
+import LastUpdated from './LastUpdated.astro'
+import PrevNextLinks from './PrevNextLinks.astro'
 
-interface Props {
-  entry: { id: string; data: StarlightData }
-  entryMeta: LocaleData
+interface Props extends LocaleData {
+  slug: string
+  editUrl: string | boolean
   sidebar: SidebarEntry[]
 }
 
-const { entry, data, sidebar } = Astro.props
+const { slug, sidebar, locale, editUrl, lang, dir } = Astro.props
 const prevNextLinks = getPrevNextLinks(sidebar)
 ---
 
@@ -25,12 +24,12 @@ const prevNextLinks = getPrevNextLinks(sidebar)
   <div class="meta flex">
     {
       config.editLink.baseUrl && (
-        <EditLink data={entry.data} id={entry.id} {locale} />
+        <EditLink editUrl={editUrl} slug={slug} locale={locale} />
       )
     }
-    <LastUpdated id={entry.id} {lang} {locale} />
+    <LastUpdated slug={slug} lang={lang} locale={locale} />
   </div>
-  <PrevNextLinks {...prevNextLinks} {dir} {locale} />
+  <PrevNextLinks {...prevNextLinks} dir={dir} locale={locale} />
 </footer>
 
 <style>

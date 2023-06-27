@@ -1,5 +1,4 @@
 ---
-import { getSidebar } from '@astrojs/starlight/utils/navigation'
 import type { MarkdownHeading } from 'astro'
 import config from 'virtual:starlight/user-config'
 
@@ -12,7 +11,6 @@ import '@astrojs/starlight/style/util.css'
 // Components — can override built-in CSS, but not user CSS.
 import ContentPanel from '@astrojs/starlight/components/ContentPanel.astro'
 import FallbackContentNotice from '@astrojs/starlight/components/FallbackContentNotice.astro'
-import Footer from '@astrojs/starlight/components/Footer.astro'
 import Header from '@astrojs/starlight/components/Header.astro'
 import MarkdownContent from '@astrojs/starlight/components/MarkdownContent.astro'
 import RightSidebar from '@astrojs/starlight/components/RightSidebar.astro'
@@ -28,48 +26,62 @@ import MarkdownMeta from '../components/MarkdownMeta.astro'
 import '@astrojs/starlight/style/asides.css'
 
 // Important that this is the last import so it can override built-in styles.
-import type { LocaleData } from '@astrojs/starlight/utils/slugs'
+import { getCollection } from 'astro:content'
 import 'virtual:starlight/user-css'
+import Footer from '../components/Footer.astro'
 import HeadSEO from '../components/HeadSEO.astro'
-import Hero from '../components/Hero.astro'
-import type { StarlightData } from '../starlight/schemas/starlight'
+import type { DocTemplates, collections } from '../content/config'
+import type { HeadConfig } from '../starlight/schemas/head'
+import type { TableOfContents } from '../starlight/schemas/tableOfContents'
+import { getSidebar } from '../starlight/utils/navigation'
+import type { LocaleData } from '../starlight/utils/slugs'
 
 interface Props {
-  entry: {
-    id: string
-    data: StarlightData
-  }
-  localeData: LocaleData
+  id: string
   slug: string
+  title: string
+  editUrl: string
+  localeData: LocaleData
+  head: HeadConfig
+  tableOfContents?: TableOfContents
+  template?: DocTemplates
   isFallback?: true
+  collection: keyof typeof collections
 
   headings: MarkdownHeading[]
   /** Which frontmatter properties should be rendered in the page */
   metaProperties: Array<{ key: string; header?: string }>
 }
 
-const { dir, entry, entryMeta, headings, isFallback } = Astro.props
-const sidebar = getSidebar(Astro.url.pathname, entryMeta.locale)
+const {
+  slug,
+  head,
+  title,
+  collection,
+  localeData: { locale, dir, lang },
+  headings,
+  isFallback,
+  editUrl,
+  metaProperties,
+  tableOfContents,
 
-const hasSidebar = entry.data.template !== 'splash'
+  template,
+} = Astro.props
+const collectionContent = await getCollection(collection)
+const sidebar = getSidebar(collectionContent, Astro.url.pathname, locale)
+
+const hasSidebar = template !== 'splash'
 const tocConfig = !hasSidebar
   ? false
-  : entry.data.tableOfContents !== undefined
-  ? entry.data.tableOfContents
+  : tableOfContents !== undefined
+  ? tableOfContents
   : config.tableOfContents
 const hasToC = Boolean(tocConfig)
-const hasHero = Boolean(entry.data.hero)
 ---
 
-<html
-  {entryMeta.lang}
-  {entryMeta.dir}
-  data-has-toc={hasToC}
-  data-has-sidebar={hasSidebar}
-  data-has-hero={hasHero}
->
+<html {lang} {dir} data-has-toc={hasToC} data-has-sidebar={hasSidebar}>
   <head>
-    <HeadSEO data={entry.data} lang={entryMeta.lang} />
+    <HeadSEO title={title} head={head} lang={lang} />
     <style>
       html:not([data-has-toc]) {
         --sl-mobile-toc-height: 0rem;
@@ -101,60 +113,46 @@ const hasHero = Boolean(entry.data.hero)
   </head>
   <body>
     <ThemeProvider />
-    <SkipLink locale={entryMeta.locale} />
-    <PageFrame locale={entryMeta.locale} hasSidebar={hasSidebar}>
-      <Header slot="header" locale={entryMeta.locale} />
+    <SkipLink locale={locale} />
+    <PageFrame locale={locale} hasSidebar={hasSidebar}>
+      <Header slot="header" locale={locale} />
       {
         hasSidebar && (
-          <Sidebar slot="sidebar" sidebar={sidebar} locale={entryMeta.locale} />
+          <Sidebar slot="sidebar" sidebar={sidebar} locale={locale} />
         )
       }
       <TwoColumnContent {hasToC}>
         <RightSidebar
           slot="right-sidebar"
           headings={headings}
-          locale={entryMeta.locale}
+          locale={locale}
           {tocConfig}
         />
-        <main
-          data-pagefind-body={entry.slug !== '404'}
-          lang={entryMeta.lang}
-          dir={entryMeta.dir}
-        >
-          {/* TODO: Revisit how this logic flows. */}
-          {
-            entry.data.hero ? (
-              <ContentPanel>
-                <Hero hero={entry.data.hero} fallbackTitle={entry.data.title} />
-                <MarkdownContent>
-                  <MarkdownMeta entryMeta={{}} metaProperties={[]} />
-                  <slot />
-                </MarkdownContent>
-              </ContentPanel>
-            ) : (
-              <>
-                <ContentPanel>
-                  <h1
-                    id="_top"
-                    data-page-title
-                    style="font-size: var(--sl-text-h1); line-height: var(--sl-line-height-headings); font-weight: 600; color: var(--sl-color-white); margin-top: 1rem;"
-                  >
-                    {entry.data.title}
-                  </h1>
-                  {isFallback && (
-                    <FallbackContentNotice locale={entryMeta.locale} />
-                  )}
-                </ContentPanel>
-                <ContentPanel>
-                  <MarkdownContent>
-                    <MarkdownMeta entryMeta={{}} metaProperties={[]} />
-                    <slot />
-                  </MarkdownContent>
-                  <Footer {...{ entry, dir, lang, locale, sidebar }} />
-                </ContentPanel>
-              </>
-            )
-          }
+        <main data-pagefind-body={slug !== '404'} lang={lang} dir={dir}>
+          <ContentPanel>
+            <h1
+              id="_top"
+              data-page-title
+              style="font-size: var(--sl-text-h1); line-height: var(--sl-line-height-headings); font-weight: 600; color: var(--sl-color-white); margin-top: 1rem;"
+            >
+              {title}
+            </h1>
+            {isFallback && <FallbackContentNotice locale={locale} />}
+          </ContentPanel>
+          <ContentPanel>
+            <MarkdownContent>
+              <MarkdownMeta entryMeta={{}} metaProperties={[]} />
+              <slot />
+            </MarkdownContent>
+            <Footer
+              slug={slug}
+              editUrl={editUrl}
+              dir={dir}
+              lang={lang}
+              locale={locale}
+              sidebar={sidebar}
+            />
+          </ContentPanel>
         </main>
       </TwoColumnContent>
     </PageFrame>

@@ -1,6 +1,6 @@
-import { z } from 'astro/zod';
+import { z } from 'astro/zod'
 
-const defaults = { minHeadingLevel: 2, maxHeadingLevel: 3 };
+const defaults = { minHeadingLevel: 2, maxHeadingLevel: 3 }
 
 export const TableOfContentsSchema = () =>
   z
@@ -20,4 +20,6 @@ export const TableOfContentsSchema = () =>
         message:
           'minHeadingLevel must be less than or equal to maxHeadingLevel',
       }
-    );
+    )
+
+export type TableOfContents = z.infer<ReturnType<typeof TableOfContentsSchema>>

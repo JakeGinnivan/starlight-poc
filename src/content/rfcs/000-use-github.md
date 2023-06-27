@@ -1,6 +1,5 @@
 ---
 title: Use GitHub
-type: rfc
 status: proposed
 ---
 

@@ -1,14 +1,14 @@
-import { HeadConfig, HeadConfigSchema, HeadUserConfig } from '../schemas/head';
+import { HeadConfig, HeadConfigSchema } from '../schemas/head'
 
-const HeadSchema = HeadConfigSchema();
+const HeadSchema = HeadConfigSchema()
 
 /** Create a fully parsed, merged, and sorted head entry array from multiple sources. */
-export function createHead(defaults: HeadUserConfig, ...heads: HeadConfig[]) {
-  let head = HeadSchema.parse(defaults);
+export function createHead(defaults: HeadConfig, ...heads: HeadConfig[]) {
+  let head = HeadSchema.parse(defaults)
   for (const next of heads) {
-    head = mergeHead(head, next);
+    head = mergeHead(head, next)
   }
-  return sortHead(head);
+  return sortHead(head)
 }
 
 /**
@@ -22,11 +22,11 @@ export function createHead(defaults: HeadUserConfig, ...heads: HeadConfig[]) {
 function hasTag(head: HeadConfig, entry: HeadConfig[number]): boolean {
   switch (entry.tag) {
     case 'title':
-      return head.some(({ tag }) => tag === 'title');
+      return head.some(({ tag }) => tag === 'title')
     case 'meta':
-      return hasOneOf(head, entry, ['name', 'property', 'http-equiv']);
+      return hasOneOf(head, entry, ['name', 'property', 'http-equiv'])
     default:
-      return false;
+      return false
   }
 }
 
@@ -39,10 +39,10 @@ function hasOneOf(
   entry: HeadConfig[number],
   keys: string[]
 ): boolean {
-  const attr = getAttr(keys, entry);
-  if (!attr) return false;
-  const [key, val] = attr;
-  return head.some(({ tag, attrs }) => tag === entry.tag && attrs[key] === val);
+  const attr = getAttr(keys, entry)
+  if (!attr) return false
+  const [key, val] = attr
+  return head.some(({ tag, attrs }) => tag === entry.tag && attrs[key] === val)
 }
 
 /** Find the first matching key–value pair in a head entry’s attributes. */
@@ -50,29 +50,29 @@ function getAttr(
   keys: string[],
   entry: HeadConfig[number]
 ): [key: string, value: string | boolean] | undefined {
-  let attr: [string, string | boolean] | undefined;
+  let attr: [string, string | boolean] | undefined
   for (const key of keys) {
-    const val = entry.attrs[key];
+    const val = entry.attrs[key]
     if (val) {
-      attr = [key, val];
-      break;
+      attr = [key, val]
+      break
     }
   }
-  return attr;
+  return attr
 }
 
 /** Merge two heads, overwriting entries in the first head that exist in the second. */
 function mergeHead(oldHead: HeadConfig, newHead: HeadConfig) {
-  return [...oldHead.filter((tag) => !hasTag(newHead, tag)), ...newHead];
+  return [...oldHead.filter((tag) => !hasTag(newHead, tag)), ...newHead]
 }
 
 /** Sort head tags to place important tags first and relegate “SEO” meta tags. */
 function sortHead(head: HeadConfig) {
   return head.sort((a, b) => {
-    const aImportance = getImportance(a);
-    const bImportance = getImportance(b);
-    return aImportance > bImportance ? -1 : bImportance > aImportance ? 1 : 0;
-  });
+    const aImportance = getImportance(a)
+    const bImportance = getImportance(b)
+    return aImportance > bImportance ? -1 : bImportance > aImportance ? 1 : 0
+  })
 }
 
 /** Get the relative importance of a specific head tag. */
@@ -84,12 +84,12 @@ function getImportance(entry: HeadConfig[number]) {
       'http-equiv' in entry.attrs ||
       entry.attrs.name === 'viewport')
   ) {
-    return 100;
+    return 100
   }
   // 2. Page title
-  if (entry.tag === 'title') return 90;
+  if (entry.tag === 'title') return 90
   // 3. Anything that isn’t an SEO meta tag.
-  if (entry.tag !== 'meta') return 80;
+  if (entry.tag !== 'meta') return 80
   // 4. SEO meta tags.
-  return 0;
+  return 0
 }

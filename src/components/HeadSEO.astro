@@ -1,24 +1,24 @@
 ---
-import type { HeadConfigSchema } from '@astrojs/starlight/schemas/head'
-import { fileWithBase } from '@astrojs/starlight/utils/base'
-import { createHead } from '@astrojs/starlight/utils/head'
-import { localizedUrl } from '@astrojs/starlight/utils/localizedUrl'
 import type { z } from 'astro:content'
 import config from 'virtual:starlight/user-config'
-import type { StarlightData } from '../starlight/schemas/starlight'
+import type { HeadConfig, HeadConfigSchema } from '../starlight/schemas/head'
+import { fileWithBase } from '../starlight/utils/base'
+import { createHead } from '../starlight/utils/head'
+import { localizedUrl } from '../starlight/utils/localizedUrl'
 
 interface Props {
-  data: StarlightData
+  title: string
+  description?: string
+  head: HeadConfig
   lang: string
 }
 
-const { data, lang } = Astro.props
+const { title, lang } = Astro.props
 
 const canonical = Astro.site
   ? new URL(Astro.url.pathname, Astro.site)
   : undefined
-const title = data.title || config.title
-const description = data.description || config.description
+const description = Astro.props.description || config.description
 
 const headDefaults: z.input<ReturnType<typeof HeadConfigSchema>> = [
   { tag: 'meta', attrs: { charset: 'utf-8' } },
@@ -98,7 +98,7 @@ if (config.social?.twitter) {
   })
 }
 
-const head = createHead(headDefaults, config.head, data.head)
+const head = createHead(headDefaults, config.head, Astro.props.head)
 ---
 
 {

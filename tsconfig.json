@@ -2,6 +2,7 @@
   "extends": "astro/tsconfigs/strict",
   "compilerOptions": {
     "allowImportingTsExtensions": true,
+    "skipLibCheck": true,
     "paths": {
       "helper": [
         "helper/src/index.ts"
